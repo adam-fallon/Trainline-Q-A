@@ -28,14 +28,23 @@ llm = None
 db = None
 
 
-def ask_question(query):
+def ask_question(message, history):
     qa = VectorDBQA.from_chain_type(llm=llm, chain_type="stuff", vectorstore=db)
-    result = qa.run(query)
+    result = qa.run(message)
     return result
 
 
 def setup_gradio():
-    demo = gr.Interface(fn=ask_question, inputs="text", outputs="text")
+    demo = gr.ChatInterface(
+        fn=ask_question,
+        examples=[
+            "Trains per day from London to Edinburgh?",
+            "When is the last train from Madrid to Barcelona?",
+            "Train and bus operators from Rome to Madrid?",
+            "How many changes from Barcelona to Madrid?",
+        ],
+        title="Trainline Q & A 🤖"
+    )
     demo.launch()
 
 
