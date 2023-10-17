@@ -1,0 +1,6 @@
+env
+.vscode
+docs
+flagged
+**/__pycache__
+.env
