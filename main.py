@@ -57,7 +57,11 @@ def ask_question(message, history):
         return_source_documents=True,
     )
     result = qa(message)
-    return f"{result['result']}\n[Source]({result['source_documents'][0].metadata['source']})"
+    source = result["source_documents"][0].metadata["source"]
+    if result['result'] == "I don't know":
+        return f"{result['result']}"
+    else:
+        return f"{result['result']}\n[Source]({source})"
 
 
 def setup_gradio():
@@ -71,7 +75,7 @@ def setup_gradio():
             "Price from London to Madrid?",
         ],
         title="Trainline Q & A 🤖",
-        description=f"Ask questions about routes. Supported routes: {', '.join(urls.values())}"
+        description=f"Ask questions about routes. Supported routes: {', '.join(urls.values())}",
     )
 
     demo.launch()
