@@ -7,5 +7,5 @@ Retrieves some web content from Trainline, stores the Journey Info in a VectorDB
 1. `python -m venv env`
 2. `source env/bin/activate`
 3. `pip install -r requirements.txt`
-4. `python main.py`
+4. `python main.py` (if you don't have the vector db populated already change `force_reindex` in `main.py` from `False` to `True`)
 5. Go to http://localhost:7860 in your browser
