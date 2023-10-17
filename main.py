@@ -26,7 +26,7 @@ greet = "Ask a question in the like 'How many trains per day from Rome to Madrid
 
 llm = None
 db = None
-force_reindex = False
+force_reindex = True
 
 
 def ask_question(message, history):
@@ -57,12 +57,24 @@ def setup_gradio():
 
 
 def load_docs():
+    # Few random ones and top results from https://www.thetrainline.com/train-times
     urls = {
         "https://www.thetrainline.com/en/train-times/london-to-edinburgh": "london to edinburgh",
         "https://www.thetrainline.com/train-times/madrid-to-barcelona": "madrid to barcelona",
         "https://www.thetrainline.com/en/train-times/rome-to-madrid": "rome to madrid",
         "https://www.thetrainline.com/en/train-times/barcelona-to-madrid": "barcelona to madrid",
         "https://www.thetrainline.com/en/train-times/london-to-madrid": "london to madrid",
+        "https://www.thetrainline.com/en/train-times/london-to-manchester": "london to manchester",
+        "https://www.thetrainline.com/en/train-times/leeds-to-london": "leeds to london",
+        "https://www.thetrainline.com/en/train-times/london-to-birmingham": "london to birmingham",
+        "https://www.thetrainline.com/en/train-times/london-to-brighton": "london to brighton",
+        "https://www.thetrainline.com/en/train-times/manchester-to-london": "manchester to london",
+        "https://www.thetrainline.com/en/train-times/edinburgh-to-london": "edinburgh to london",
+        "https://www.thetrainline.com/en/train-times/glasgow-to-manchester": "glasgow to manchester",
+        "https://www.thetrainline.com/en/train-times/glasgow-to-liverpool": "glasgow to liverpool",
+        "https://www.thetrainline.com/en/train-times/glasgow-to-leeds": "glasgow to leeds",
+        "https://www.thetrainline.com/en/train-times/birmingham-to-glasgow": "birmingham to glasgow",
+        "https://www.thetrainline.com/en/train-times/london-to-newcastle": "london to newcastle",
     }
 
     loader = TrainlineTrainTimeLoader(list(urls.keys()), urls_to_od_pair=urls)
