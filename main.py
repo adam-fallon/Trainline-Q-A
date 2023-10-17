@@ -4,7 +4,7 @@ from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.llms import HuggingFaceHub
 from tl_loaders.TrainlineTrainTimeLoader import TrainlineTrainTimeLoader
-from langchain.chains import VectorDBQA
+from langchain.chains import RetrievalQA
 import gradio as gr
 
 from dotenv import load_dotenv
@@ -26,12 +26,19 @@ greet = "Ask a question in the like 'How many trains per day from Rome to Madrid
 
 llm = None
 db = None
+force_reindex = False
 
 
 def ask_question(message, history):
-    qa = VectorDBQA.from_chain_type(llm=llm, chain_type="stuff", vectorstore=db)
-    result = qa.run(message)
-    return result
+    qa = RetrievalQA.from_chain_type(
+        llm=llm,
+        chain_type="stuff",
+        retriever=db.as_retriever(),
+        return_source_documents=True,
+    )
+    result = qa(message)
+    print(result)
+    return f"{result['result']}\n[Source]({result['source_documents'][0].metadata['source']})"
 
 
 def setup_gradio():
@@ -42,8 +49,9 @@ def setup_gradio():
             "When is the last train from Madrid to Barcelona?",
             "Train and bus operators from Rome to Madrid?",
             "How many changes from Barcelona to Madrid?",
+            "Price from London to Madrid?",
         ],
-        title="Trainline Q & A 🤖"
+        title="Trainline Q & A 🤖",
     )
     demo.launch()
 
@@ -54,6 +62,7 @@ def load_docs():
         "https://www.thetrainline.com/train-times/madrid-to-barcelona": "madrid to barcelona",
         "https://www.thetrainline.com/en/train-times/rome-to-madrid": "rome to madrid",
         "https://www.thetrainline.com/en/train-times/barcelona-to-madrid": "barcelona to madrid",
+        "https://www.thetrainline.com/en/train-times/london-to-madrid": "london to madrid",
     }
 
     loader = TrainlineTrainTimeLoader(list(urls.keys()), urls_to_od_pair=urls)
@@ -73,13 +82,27 @@ def create_splits():
 
 def create_store():
     embeddings = HuggingFaceEmbeddings(model_name=embedding_model)
+    print("Attempting to load vector store from disk...")
 
-    vectorstore = Chroma.from_documents(
-        documents=create_splits(),
-        embedding=embeddings,
+    vectorstore = Chroma(
+        embedding_function=embeddings,
         persist_directory=persist_directory,
-        collection_name=vector_store_name,
     )
+
+    doc_count = len(vectorstore.get()["documents"])
+
+    if doc_count <= 0 or force_reindex:
+        print("Creating document store...")
+        vectorstore = Chroma.from_documents(
+            documents=create_splits(),
+            embedding=embeddings,
+            persist_directory=persist_directory,
+        )
+        print("Attempting to save vector store to disk...")
+        vectorstore.persist()
+        print("Done saving vector db to disk!")
+    else:
+        print(f"Loaded Vector DB from disk, Doc count: {doc_count}")
 
     return vectorstore
 
