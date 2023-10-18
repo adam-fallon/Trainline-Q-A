@@ -62,6 +62,7 @@ networkx==3.1
 nltk==3.8.1
 numpy==1.26.1
 onnxruntime==1.16.1
+openai==0.28.1
 orjson==3.9.9
 overrides==7.4.0
 packaging==23.2

@@ -144,7 +144,6 @@ class TrainlineTrainTimeLoader(BaseLoader):
             results = asyncio.run(self.fetch_all(self.web_paths))
         docs = []
         for i, text in enumerate(cast(List[str], results)):
-            page_content = []
             metadata = {"source": self.web_paths[i]}
             soup = BeautifulSoup(text, 'html.parser')
             table = soup.find('table', {'id': 'journeyInformation'})
@@ -158,8 +157,6 @@ class TrainlineTrainTimeLoader(BaseLoader):
                     content = content_tag.text
                     content = content.replace('\xa0', ' ')
                     od_pair = self.urls_to_od_pair[self.web_paths[i]]
-                    page_content.append(f"{header} from {od_pair} = {content}")
-
-            docs.append(Document(page_content=', '.join(page_content), metadata=metadata))
+                    docs.append(Document(page_content=f"{header} from {od_pair} = {content}", metadata=metadata))
 
         return docs
