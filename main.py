@@ -16,9 +16,6 @@ persist_directory = "docs/chroma/"
 chunk_size = 1000
 chunk_overlap = 0
 
-vector_store_name = "train_time_info"
-vector_store_info = "Train time info"
-
 repo_id = "google/flan-t5-xxl"
 
 model_options = {"temperature": 0.1, "max_length": 256}
@@ -56,9 +53,12 @@ def ask_question(message, history):
         retriever=db.as_retriever(),
         return_source_documents=True,
     )
+
     result = qa(message)
+
     source = result["source_documents"][0].metadata["source"]
-    if result['result'] == "I don't know":
+
+    if result["result"] == "I don't know":
         return f"{result['result']}"
     else:
         return f"{result['result']}\n[Source]({source})"
