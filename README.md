@@ -3,6 +3,29 @@ Simple project using an LLM to do Q&A over Trainline Train Time Pages.
 
 Retrieves some web content from Trainline, stores the Journey Info in a VectorDB and allows you to do question and answering over the data.
 
+- Model: `meta-llama/Llama-2-13b-chat-hf`
+```
+model_options = {
+    "temperature": 0.1,
+    "max_length": 256,
+    "stop_sequence": ".",
+    "max_new_tokens": 2056,
+}
+```
+- Embeddings: `text-embedding-ada-002-v2`
+```
+ChunkingStrategy = RecursiveCharacterTextSplitter
+chunk_size = 1000
+chunk_overlap = 0
+```
+- VectorDB: `ChromaDB`
+```
+search_kwargs = {
+    "k": 5,
+    "search_type": "mmr"
+}
+```
+
 ## Setup
 1. `python -m venv env`
 2. `source env/bin/activate`
