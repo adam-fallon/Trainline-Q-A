@@ -13,7 +13,7 @@ import gradio as gr
 from dotenv import load_dotenv
 
 load_dotenv()
-embedding_model = "sentence-transformers/all-mpnet-base-v2"
+# embedding_model = "sentence-transformers/all-mpnet-base-v2"
 persist_directory = "docs/chroma/openai"
 chunk_size = 1000
 chunk_overlap = 0
