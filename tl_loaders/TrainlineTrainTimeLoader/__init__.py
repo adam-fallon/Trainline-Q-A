@@ -24,6 +24,7 @@ default_header_template = {
     "Upgrade-Insecure-Requests": "1",
 }
 
+
 class TrainlineTrainTimeLoader(BaseLoader):
     """Load `HTML` asynchronously."""
 
@@ -36,7 +37,7 @@ class TrainlineTrainTimeLoader(BaseLoader):
         proxies: Optional[dict] = None,
         requests_per_second: int = 2,
         requests_kwargs: Optional[Dict[str, Any]] = None,
-        raise_for_status: bool = False,        
+        raise_for_status: bool = False,
     ):
         """Initialize with a webpage path."""
 
@@ -145,18 +146,20 @@ class TrainlineTrainTimeLoader(BaseLoader):
         docs = []
         for i, text in enumerate(cast(List[str], results)):
             metadata = {"source": self.web_paths[i]}
-            soup = BeautifulSoup(text, 'html.parser')
-            table = soup.find('table', {'id': 'journeyInformation'})
+            soup = BeautifulSoup(text, "html.parser")
+            table = soup.find("table", {"id": "journeyInformation"})
 
-            for row in table.find_all('tr'):
-                header_tag = row.find('th')
-                content_tag = row.find('td').find('p') if row.find('td') else None
-                
+            for row in table.find_all("tr"):
+                header_tag = row.find("th")
+                content_tag = row.find("td").find("p") if row.find("td") else None
+
                 if header_tag and content_tag:
                     header = header_tag.text
                     content = content_tag.text
-                    content = content.replace('\xa0', ' ')
+                    content = content.replace("\xa0", " ")
                     od_pair = self.urls_to_od_pair[self.web_paths[i]]
-                    docs.append(Document(page_content=f"{header} from {od_pair} = {content}", metadata=metadata))
+                    page_content = f"{header} from {od_pair} = {content}"
+                    print(page_content)
+                    docs.append(Document(page_content=page_content, metadata=metadata))
 
         return docs

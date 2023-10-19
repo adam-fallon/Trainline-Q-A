@@ -33,7 +33,7 @@ greet = "Ask a question in the like 'How many trains per day from Rome to Madrid
 newline = "\n"
 llm = None
 db = None
-force_reindex = False
+force_reindex = True
 chat_history = []
 
 # Few random ones and top results from https://www.thetrainline.com/train-times
@@ -47,13 +47,12 @@ urls = {
     "https://www.thetrainline.com/en/train-times/leeds-to-london": "Leeds to London",
     "https://www.thetrainline.com/en/train-times/london-to-birmingham": "London to Birmingham",
     "https://www.thetrainline.com/en/train-times/london-to-brighton": "London to Brighton",
-    "https://www.thetrainline.com/en/train-times/manchester-to-london": "Manchester to London",
-    "https://www.thetrainline.com/en/train-times/edinburgh-to-london": "Edinburgh to London",
     "https://www.thetrainline.com/en/train-times/glasgow-to-manchester": "Glasgow to Manchester",
     "https://www.thetrainline.com/en/train-times/glasgow-to-liverpool": "Glasgow to Liverpool",
     "https://www.thetrainline.com/en/train-times/glasgow-to-leeds": "Glasgow to Leeds",
     "https://www.thetrainline.com/en/train-times/birmingham-to-glasgow": "Birmingham to Glasgow",
     "https://www.thetrainline.com/en/train-times/london-to-newcastle": "London to Newcastle",
+    "https://www.thetrainline.com/train-times/seville-to-madrid": "Seville to Madrid"
 }
 
 

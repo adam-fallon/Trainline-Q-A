@@ -27,8 +27,9 @@ search_kwargs = {
 ```
 
 ## Setup
-1. `python -m venv env`
-2. `source env/bin/activate`
-3. `pip install -r requirements.txt`
-4. `python main.py` (if you don't have the vector db populated already change `force_reindex` in `main.py` from `False` to `True`)
-5. Go to http://localhost:7860 in your browser
+1. `cp .env.example .env` and add your HuggingFace (You need HF Pro to use llama2 - change the model if you are a cheapskate) + OpenAI key.
+2. `python -m venv env`
+3. `source env/bin/activate`
+4. `pip install -r requirements.txt`
+5. `python main.py` (if you don't have the vector db populated already change `force_reindex` in `main.py` from `False` to `True`)
+6. Go to http://localhost:7860 in your browser
