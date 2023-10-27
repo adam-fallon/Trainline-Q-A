@@ -3,18 +3,19 @@ import langchain
 
 langchain.verbose = True
 from langchain.vectorstores import Chroma
-from langchain.embeddings import HuggingFaceEmbeddings, OpenAIEmbeddings
+from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.llms import HuggingFaceHub
 from tl_loaders.TrainlineTrainTimeLoader import TrainlineTrainTimeLoader
 from langchain.chains import RetrievalQA
+from langchain.prompts import PromptTemplate
 import gradio as gr
 
 from dotenv import load_dotenv
 
 load_dotenv()
-# embedding_model = "sentence-transformers/all-mpnet-base-v2"
-persist_directory = "docs/chroma/openai"
+embedding_model = "sentence-transformers/all-mpnet-base-v2"
+persist_directory = "docs/chroma/"
 chunk_size = 1000
 chunk_overlap = 0
 
@@ -56,13 +57,36 @@ urls = {
 }
 
 
-def ask_question(message, history):
+def ask_question(message):
+    prompt = """
+Use the following pieces of context to answer the question at the end. 
+Be very succint and give just the answer - no other info.
+If you don't know the answer, just say that you don't know, don't try to make up an answer.
+DO NOT RAMBLE or try to infer information that isn't in the context.
+Take a deep breath and work on this problem step-by-step.
+The prompt with have a to station and a from station - only answer if the exact station matches the context - say I don't know if the info isn't in the context.
+The order is important. E.g Seville to Madrid is not the same as Madrid to Seville so if the order of stations in the context doesn't match the query then don't try answer.
+
+{context}
+
+
+Question: {question}
+Helpful answer:
+    """
     qa = RetrievalQA.from_chain_type(
         llm=llm,
         chain_type="stuff",
         retriever=db.as_retriever(search_kwargs=search_kwargs),
         return_source_documents=True,
+        chain_type_kwargs={
+            "prompt": PromptTemplate(
+                template=prompt,
+                input_variables=["context", "question"],
+            ),
+        },
     )
+
+    print(qa.combine_documents_chain.llm_chain.prompt.template)
 
     # result = qa(f"{newline.join(chat_history)}\n[INST]{message}[/INST]")
     result = qa(f"[INST]{message}[/INST]")
@@ -77,26 +101,95 @@ def ask_question(message, history):
     else:
         try:
             source = result["source_documents"][0].metadata["source"]
-            return f"{answer}\n[Source]({source})"
+            doc = result["source_documents"][0].page_content
+            return f"{answer}\n---\nMost relevant document: {doc}\nSource: {source}"
         except:
             return f"{answer}"
 
 
 def setup_gradio():
-    demo = gr.ChatInterface(
-        fn=ask_question,
-        examples=[
-            "Trains per day from London to Edinburgh?",
-            "When is the last train from Madrid to Barcelona?",
-            "Train and bus operators from Rome to Madrid?",
-            "How many changes from Barcelona to Madrid?",
-            "Price from London to Madrid?",
-        ],
-        title="Trainline Q & A 🤖",
-        description=f"Ask questions about routes. Supported routes: {', '.join(urls.values())}",
-    )
+    desc = """
+    Welcome to Train Route Q&A! 
 
-    demo.launch()
+    A silly little demo of how RAG can ground the answers from an LLM.
+    
+    - This isn't an answer everything box - Really only expect grounded answers from the list of supported questions below.    
+    - NOT A chat model - it is 1 response to 1 question so you can't ask follow up.
+    - Data accurate as of 19th October 2023.
+    - Always returns a source document most relevant to your question - even if the answer is not found.
+    - 'Weak' models (like llama2-13b) won't listen to prompt rules effectively - clone the space and use a mode powerful model for best experience.
+    
+    Not an official Trainline Project!
+    """
+
+    long_desc = """
+    Ask a question in like 'How many trains per day from Rome to Madrid'.     
+
+    This info is scrapped from the table on train time pages. Example page here: https://www.thetrainline.com/train-times/manchester-to-london
+    
+    Not all train time pages have been scraped so you don't get answers for every route, just the ones in the supported routes below and only answers for the supported questions.
+    
+    Supported questions
+    ---
+    - Price from X to Y
+    - Last train from X to Y
+    - First train from X to Y
+    - Frequency of trains from X to Y
+    - Price of trains from X to Y
+    - Operators of trains and buses from X to Y
+    - Distance from X to Y
+    - Number of Changes from X to Y
+    - Journey time from X to Y
+
+    Supported routes
+    ---
+    - London to Edinburgh
+    - Madrid to Barcelona
+    - Rome to Madrid
+    - Barcelona to Madrid
+    - London to Madrid
+    - London to Manchester
+    - Leeds to London
+    - London to Birmingham
+    - London to Brighton
+    - Glasgow to Manchester
+    - Glasgow to Liverpool
+    - Glasgow to Leeds
+    - Birmingham to Glasgow
+    - London to Newcastle
+    - Seville to Madrid
+
+    Info
+    ---
+    - Model: meta-llama/Llama-2-13b-chat-hf
+    - Embedding Model: sentence-transformers/all-mpnet-base-v2
+
+    Prompt
+    ---
+    Use the following pieces of context to answer the question at the end. 
+    Be very succint and give just the answer - no other info.
+    If you don't know the answer, just say that you don't know, don't try to make up an answer.
+    DO NOT RAMBLE or try to infer information that isn't in the context.
+    Take a deep breath and work on this problem step-by-step.
+    The prompt with have a to station and a from station - only answer if the exact station matches the context - say I don't know if the info isn't in the context.
+    The order is important. E.g Seville to Madrid is not the same as Madrid to Seville so if the order of stations in the context doesn't match the query then don't try answer.
+    
+    {context}
+    
+    Question: {question}
+    Helpful answer:
+    """
+
+    iface = gr.Interface(
+        ask_question,
+        inputs="text",
+        outputs="text",
+        allow_screenshot=False,
+        allow_flagging=False,
+        description=desc, 
+        article=long_desc
+    )
+    iface.launch()
 
 
 def load_docs():
@@ -116,8 +209,7 @@ def create_splits():
 
 
 def create_store():
-    # embeddings = HuggingFaceEmbeddings(model_name=embedding_model)
-    embeddings = OpenAIEmbeddings()
+    embeddings = HuggingFaceEmbeddings(model_name=embedding_model)
 
     print("Attempting to load vector store from disk...")
 
@@ -150,12 +242,11 @@ def create_llm():
     return llm
 
 
-if __name__ == "__main__":
-    if force_reindex:
-        try:
-            shutil.rmtree(persist_directory)
-        except OSError as error:
-            print(error)
-    llm = create_llm()
-    db = create_store()
-    setup_gradio()
+if force_reindex:
+    try:
+        shutil.rmtree(persist_directory)
+    except OSError as error:
+        print(error)
+llm = create_llm()
+db = create_store()
+setup_gradio()
