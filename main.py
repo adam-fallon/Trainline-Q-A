@@ -57,10 +57,11 @@ urls = {
 }
 
 
-def ask_question(message):
+def ask_question(message, llm=llm, db=db, answer_mode='full'):
     prompt = """
 Use the following pieces of context to answer the question at the end. 
 Be very succint and give just the answer - no other info.
+Do not reply using a complete sentence, and only give the answer.
 If you don't know the answer, just say that you don't know, don't try to make up an answer.
 DO NOT RAMBLE or try to infer information that isn't in the context.
 Take a deep breath and work on this problem step-by-step.
@@ -102,7 +103,8 @@ Helpful answer:
         try:
             source = result["source_documents"][0].metadata["source"]
             doc = result["source_documents"][0].page_content
-            return f"{answer}\n---\nMost relevant document: {doc}\nSource: {source}"
+            return f"{answer}\n---\nMost relevant document: {doc}\nSource: {source}" \
+                if answer_mode == 'full' else f"{answer}"
         except:
             return f"{answer}"
 
@@ -186,7 +188,7 @@ def setup_gradio():
         outputs="text",
         allow_screenshot=False,
         allow_flagging=False,
-        description=desc, 
+        description=desc,
         article=long_desc
     )
     iface.launch()
@@ -194,7 +196,8 @@ def setup_gradio():
 
 def load_docs():
     loader = TrainlineTrainTimeLoader(list(urls.keys()), urls_to_od_pair=urls)
-    html = loader.load()
+    html = loader.load()['docs']
+    print(html)
 
     return html
 
@@ -242,11 +245,12 @@ def create_llm():
     return llm
 
 
-if force_reindex:
-    try:
-        shutil.rmtree(persist_directory)
-    except OSError as error:
-        print(error)
-llm = create_llm()
-db = create_store()
-setup_gradio()
+if __name__ == "__main__":
+    if force_reindex:
+        try:
+            shutil.rmtree(persist_directory)
+        except OSError as error:
+            print(error)
+    llm = create_llm()
+    db = create_store()
+    setup_gradio()

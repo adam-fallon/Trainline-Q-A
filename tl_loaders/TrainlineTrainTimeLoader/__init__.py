@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 default_header_template = {
     "User-Agent": "",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*"
-    ";q=0.8",
+              ";q=0.8",
     "Accept-Language": "en-US,en;q=0.5",
     "Referer": "https://www.google.com/",
     "DNT": "1",
@@ -29,15 +29,15 @@ class TrainlineTrainTimeLoader(BaseLoader):
     """Load `HTML` asynchronously."""
 
     def __init__(
-        self,
-        web_path: Union[str, List[str]],
-        urls_to_od_pair: Dict[str, str],
-        header_template: Optional[dict] = None,
-        verify_ssl: Optional[bool] = True,
-        proxies: Optional[dict] = None,
-        requests_per_second: int = 2,
-        requests_kwargs: Optional[Dict[str, Any]] = None,
-        raise_for_status: bool = False,
+            self,
+            web_path: Union[str, List[str]],
+            urls_to_od_pair: Dict[str, str],
+            header_template: Optional[dict] = None,
+            verify_ssl: Optional[bool] = True,
+            proxies: Optional[dict] = None,
+            requests_per_second: int = 2,
+            requests_kwargs: Optional[Dict[str, Any]] = None,
+            raise_for_status: bool = False,
     ):
         """Initialize with a webpage path."""
 
@@ -75,15 +75,15 @@ class TrainlineTrainTimeLoader(BaseLoader):
         self.raise_for_status = raise_for_status
 
     async def _fetch(
-        self, url: str, retries: int = 3, cooldown: int = 2, backoff: float = 1.5
+            self, url: str, retries: int = 3, cooldown: int = 2, backoff: float = 1.5
     ) -> str:
         async with aiohttp.ClientSession() as session:
             for i in range(retries):
                 try:
                     async with session.get(
-                        url,
-                        headers=self.session.headers,
-                        ssl=None if self.session.verify else False,
+                            url,
+                            headers=self.session.headers,
+                            ssl=None if self.session.verify else False,
                     ) as response:
                         try:
                             text = await response.text()
@@ -99,11 +99,11 @@ class TrainlineTrainTimeLoader(BaseLoader):
                             f"Error fetching {url} with attempt "
                             f"{i + 1}/{retries}: {e}. Retrying..."
                         )
-                        await asyncio.sleep(cooldown * backoff**i)
+                        await asyncio.sleep(cooldown * backoff ** i)
         raise ValueError("retry count exceeded")
 
     async def _fetch_with_rate_limit(
-        self, url: str, semaphore: asyncio.Semaphore
+            self, url: str, semaphore: asyncio.Semaphore
     ) -> str:
         async with semaphore:
             return await self._fetch(url)
@@ -143,13 +143,15 @@ class TrainlineTrainTimeLoader(BaseLoader):
                 results = future.result()
         except RuntimeError:
             results = asyncio.run(self.fetch_all(self.web_paths))
-        docs = []
+            docs = []
+            referenceData = {}
         for i, text in enumerate(cast(List[str], results)):
             metadata = {"source": self.web_paths[i]}
             soup = BeautifulSoup(text, "html.parser")
             table = soup.find("table", {"id": "journeyInformation"})
+            referenceData[self.urls_to_od_pair[self.web_paths[i]]] = {}
 
-            for row in table.find_all("tr"):
+            for j, row in enumerate(table.find_all("tr")):
                 header_tag = row.find("th")
                 content_tag = row.find("td").find("p") if row.find("td") else None
 
@@ -161,5 +163,9 @@ class TrainlineTrainTimeLoader(BaseLoader):
                     page_content = f"{header} from {od_pair} = {content}"
                     print(page_content)
                     docs.append(Document(page_content=page_content, metadata=metadata))
+                    referenceData[od_pair][f"{header} from {od_pair}"] = content
 
-        return docs
+        return {
+            "docs": docs,
+            "referenceData": referenceData
+        }
